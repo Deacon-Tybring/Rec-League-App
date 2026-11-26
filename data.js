@@ -11,16 +11,16 @@
 // ============================================================
 
 const STARTUP = {
-  name: "YourStartup",
-  tagline: "One sentence that says what your startup does.",
-  pitch: "Who is your customer, what problem do they have, and why is your solution better than what they use today?"
+  name: "LeagueLink",
+  tagline: "One league app for scores, stats, and playoff glory.",
+  pitch: "LeagueLink helps recreational athletes keep every game, player statistic, and playoff bracket in one place so everyone in the league can follow the action."
 };
 
 const LISTINGS = [
-  { id: 1, name: "Sample listing A", category: "Category 1", description: "A short description of this item." },
-  { id: 2, name: "Sample listing B", category: "Category 2", description: "A short description of this item." },
-  { id: 3, name: "Sample listing C", category: "Category 1", description: "A short description of this item." },
-  { id: 4, name: "Sample listing D", category: "Category 3", description: "A short description of this item." },
-  { id: 5, name: "Sample listing E", category: "Category 2", description: "A short description of this item." },
-  { id: 6, name: "Sample listing F", category: "Category 3", description: "A short description of this item." }
+  { id: 1, name: "Tuesday Night Basketball", category: "Basketball", description: "Track 12 teams, live scores, top scorers, and a 8-team playoff bracket." },
+  { id: 2, name: "Riverside Soccer League", category: "Soccer", description: "Follow weekly fixtures, goal leaders, standings, and knockout rounds." },
+  { id: 3, name: "Community Volleyball Series", category: "Volleyball", description: "Post set scores, player aces, match results, and tournament seeding." },
+  { id: 4, name: "Friday Coed Softball", category: "Softball", description: "Record batting averages, run totals, team standings, and semifinal matchups." },
+  { id: 5, name: "Harbour Hockey League", category: "Hockey", description: "Keep goals, assists, penalties, game scores, and playoff brackets up to date." },
+  { id: 6, name: "Weekend Tennis Ladder", category: "Tennis", description: "Manage singles rankings, match scores, head-to-head records, and round results." }
 ];
