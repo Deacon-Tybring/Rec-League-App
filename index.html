@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LeagueLink</title>
-  <meta name="description" content="LeagueLink is a rec sports app for tracking scores, statistics, standings, and playoff brackets.">
+  <title>RinkLink</title>
+  <meta name="description" content="RinkLink is a rec sports app for tracking scores, statistics, standings, and playoff brackets.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <!-- =========================================================
        HEADER: logo text + navigation.
-       Each link points to a "view" further down the page (#home, #explore, #about).
+       Each link points to a "view" further down the page (#home, #create).
        ========================================================= -->
   <header class="site-header">
-    <a class="brand" href="#home" id="brand-name">LeagueLink</a>
+    <a class="brand" href="#home" id="brand-name">RinkLink</a>
     <nav aria-label="Main">
       <a href="#home">Home</a>
-      <a href="#explore">Explore</a>
-      <a href="#about">About</a>
+      <a href="#create">Create a league</a>
+      <a href="#manage">Leagues</a>
     </nav>
   </header>
 
@@ -32,11 +32,11 @@
         <p class="eyebrow">Rec sports, all in one place</p>
         <h1 id="tagline">One league app for scores, stats, and playoff glory.</h1>
         <p class="lead" id="pitch">
-          LeagueLink helps recreational athletes keep every game, player
+          RinkLink helps recreational athletes keep every game, player
           statistic, and playoff bracket in one place so everyone in the
           league can follow the action.
         </p>
-        <a class="button" href="#explore">See it in action</a>
+        <a class="button" href="#create">Create a league</a>
       </div>
 
       <div class="steps">
@@ -56,29 +56,46 @@
     </section>
 
     <!-- =======================================================
-         VIEW 2: EXPLORE — a list built from the fake data in data.js.
+         VIEW 2: CREATE — choose the sport and details for a new league.
          ======================================================= -->
-    <section id="explore" data-view hidden>
-      <h1>Explore leagues</h1>
-      <p class="muted">Browse fictional leagues and the sports LeagueLink can track.</p>
+    <section id="create" data-view hidden>
+      <h1>Create a league</h1>
+      <p class="muted">New leagues are created for Hockey.</p>
 
-      <label class="search">
-        <span>Search</span>
-        <input type="search" id="search-box" placeholder="Type to filter…">
-      </label>
+      <form class="league-form" id="league-form">
+        <label for="league-name">
+          <span>League name</span>
+          <input type="text" id="league-name" name="leagueName" placeholder="For example, Friday Night League" required>
+        </label>
 
-      <p class="muted" id="saved-count"></p>
-      <div class="grid" id="listing-grid"></div>
-      <p class="empty" id="empty-message" hidden>Nothing matches your search.</p>
+        <button class="button" type="submit">Create league</button>
+      </form>
+
+      <p class="form-success" id="form-success" role="status" hidden></p>
     </section>
 
     <!-- =======================================================
-         VIEW 3: ABOUT — your team and your story.
+         VIEW 3: MANAGE — view, edit, or delete created leagues.
          ======================================================= -->
-    <section id="about" data-view hidden>
-      <h1>About us</h1>
-      <p>Our team started LeagueLink to make recreational sports easier to follow. We saw athletes juggling group chats, spreadsheets, and social posts just to find scores and standings.</p>
-      <p>LeagueLink brings the entire league experience together, from the first regular-season game through the championship bracket.</p>
+    <section id="manage" data-view hidden>
+      <h1>Manage leagues</h1>
+      <p class="muted">Change a league name, delete a league, or enter its page.</p>
+      <div class="league-list" id="league-list"></div>
+      <p class="empty" id="manage-empty">You have not created any leagues yet.</p>
+    </section>
+
+    <section id="league-page-view" data-view hidden>
+      <a class="button secondary" href="#manage">Back to manage leagues</a>
+      <h1 id="league-page-title"></h1>
+      <p class="muted" id="league-page-sport"></p>
+      <div id="league-page-teams"></div>
+    </section>
+
+    <section id="team-page-view" data-view hidden>
+      <a class="button secondary" id="team-page-back" href="#manage">Back to league</a>
+      <h1 id="team-page-title"></h1>
+      <p class="muted" id="team-page-league-name"></p>
+      <div id="team-page-players"></div>
     </section>
 
   </main>

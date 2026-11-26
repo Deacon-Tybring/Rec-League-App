@@ -11,9 +11,9 @@
 // ============================================================
 
 const STARTUP = {
-  name: "LeagueLink",
+  name: "RinkLink",
   tagline: "One league app for scores, stats, and playoff glory.",
-  pitch: "LeagueLink helps recreational athletes keep every game, player statistic, and playoff bracket in one place so everyone in the league can follow the action."
+  pitch: "RinkLink helps recreational athletes keep every game, player statistic, and playoff bracket in one place so everyone in the league can follow the action."
 };
 
 const LISTINGS = [
