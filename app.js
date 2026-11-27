@@ -508,7 +508,7 @@
     }
 
     function calculateGoalieTotals(player) {
-      const totals = { saves: 0, goalsAgainst: 0 };
+      const totals = { saves: 0, goalsAgainst: 0, shutouts: 0 };
       league.games.forEach(function (game) {
         if (!Array.isArray(game.gpPlayerIds) || game.gpPlayerIds.indexOf(player.id) === -1) {
           return;
@@ -516,8 +516,21 @@
         const goalieStats = game.goalieStats && typeof game.goalieStats === "object"
           ? game.goalieStats[player.id] || {}
           : {};
+        const goalsAgainst = Math.max(0, Number(goalieStats.goalsAgainst) || 0);
         totals.saves += Math.max(0, Number(goalieStats.saves) || 0);
-        totals.goalsAgainst += Math.max(0, Number(goalieStats.goalsAgainst) || 0);
+        totals.goalsAgainst += goalsAgainst;
+        const anyGoalieAllowedGoal = team.players.some(function (goalie) {
+          if (goalie.position !== "Goalie" || game.gpPlayerIds.indexOf(goalie.id) === -1) {
+            return false;
+          }
+          const stats = game.goalieStats && typeof game.goalieStats === "object"
+            ? game.goalieStats[goalie.id] || {}
+            : {};
+          return Math.max(0, Number(stats.goalsAgainst) || 0) > 0;
+        });
+        if (!anyGoalieAllowedGoal) {
+          totals.shutouts += 1;
+        }
       });
       return totals;
     }
@@ -613,8 +626,10 @@
           const goalieTotals = calculateGoalieTotals(player);
           const saves = createStatInput("Saves", goalieTotals.saves, index);
           const goalsAgainst = createStatInput("Goals Against", goalieTotals.goalsAgainst, index);
+          const shutouts = createStatInput("Shutouts", goalieTotals.shutouts, index);
           saves.input.readOnly = true;
           goalsAgainst.input.readOnly = true;
+          shutouts.input.readOnly = true;
           const savePercentage = document.createElement("output");
           savePercentage.className = "team-player-stat-value";
           savePercentage.setAttribute("aria-label", "Player " + (index + 1) + " save percentage");
@@ -627,7 +642,7 @@
           percentageField.textContent = "Save Percentage";
           percentageField.appendChild(savePercentage);
           const gamesPlayedField = createGamesPlayedInput(player, index);
-          stats.append(gamesPlayedField, saves.field, goalsAgainst.field, percentageField);
+          stats.append(gamesPlayedField, saves.field, goalsAgainst.field, percentageField, shutouts.field);
         } else {
           const scoringTotals = calculatePlayerScoringTotals(player);
           const goals = createStatInput("Goals", scoringTotals.goals, index);

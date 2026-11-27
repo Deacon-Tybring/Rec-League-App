@@ -966,7 +966,7 @@ h1 { line-height: 1.2; }
 .player-name-toggle:hover { color: var(--brand); }
 .team-player-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: end;
   gap: 8px;
 }
