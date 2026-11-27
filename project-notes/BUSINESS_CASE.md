@@ -5,9 +5,20 @@ Your prototype shows *what* the product looks like. This document explains *why*
 ## 1. The idea
 
 - **Customer:** Who exactly is it for?
+
+This product is for individuals who participate in hockey rec leagues and want a way to track their stats games and share that with the rest of the league.
+
 - **Problem:** What problem do they have today, and how do they solve it now?
+
+Most rec leagues today do not track any statistics and manually track games and if they do often times the games and stats are not available to the players.
+
 - **Solution:** What does your product do differently or better?
+
+My product allows for a simple and easy way to track stats and games coming with a fully connected tracking program. All you have to enter the game information and it automatically populates stats like Goals, Assists, Points, Saves, Goals Against, Shutouts, Save Percentage, and Games Played. It also has a league schedule to help players see the games and when they are going to take place.
+
 - **Revenue:** How does the company make money?
+
+The company will make money by selling ad space on the website/app and selling a one time remove ad option for $1.49.
 
 ## 2. Where IT creates value
 
