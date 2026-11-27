@@ -8,7 +8,7 @@ Most rec leagues today do not track any statistics and manually track games and 
 
 My product allows for a simple and easy way to track stats and games coming with a fully connected tracking program. All you have to enter the game information and it automatically populates stats like Goals, Assists, Points, Saves, Goals Against, Shutouts, Save Percentage, and Games Played. It also has a league schedule to help players see the games and when they are going to take place. This makes it so each game can be tracked and recorded and the rest is done for you.
 
-The company will make money by selling ad space on the website/app and selling a one time remove ad option for $1.49. This will make the product accessable to those who do not want to pay but also more convient to those who are willing while also creating a subtantial revenue source.
+The company will make money by selling ad space on the website/app and selling a one time remove ad option for $1.49 and partnering with companies who want to connect to the hockey player demographic. This will make the product accessable to those who do not want to pay but also more convient to those who are willing while also creating a subtantial revenue source.
 
 ## 2. Where IT creates value
 
@@ -22,6 +22,8 @@ Does your product get more valuable as more people use it?
 - Where does the extra value come from as the network grows?
 - How would you solve the "empty network" problem at launch?
 - Point to the part of your prototype that shows this.
+
+My product does experience a network effect but only to a certain extent. The value of the network effect extends to the amount of people in your rec league that use the app / website as the more people who use it in your league the more connected the users are and the more value the product will provide however outside of that the product does not enhance the users expirence as more people use the product. An exception to this could be with more users and more revenue the products features could be improved and partnerships may also be implement in app like partnering with a jersey manufacturing company and allowing you to customize and order your teams jerseys in app this would add value to the product. For advertisers or potental partnerships the network effect does add value based on the amount of users as rec leagues often order custom jerseys so a partnership with a custom jersey manufacturing company or other companies targeting the hockey player demographic. This makes this market a two-sided because as the user base becomes larger the features will improve and in app partnerships will provide more features. As for the companies using the app to market to the hockey demographic a large user base will lead to more exposer leading to more value.
 
 ## 4. Can it be copied? (the moat question)
 
