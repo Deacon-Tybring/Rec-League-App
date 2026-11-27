@@ -24,3 +24,6 @@ const LISTINGS = [
   { id: 5, name: "Harbour Hockey League", category: "Hockey", description: "Keep goals, assists, penalties, game scores, and playoff brackets up to date." },
   { id: 6, name: "Weekend Tennis Ladder", category: "Tennis", description: "Manage singles rankings, match scores, head-to-head records, and round results." }
 ];
+
+const TEAM_LOGO_MIME_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+

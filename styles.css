@@ -207,10 +207,35 @@ h1 { line-height: 1.2; }
 }
 .league-page-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+.league-standings-wrap {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+.league-standings-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+.league-standings-table th,
+.league-standings-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.league-standings-table th {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.league-standings-table tbody tr:first-child td {
+  font-weight: 700;
 }
 .schedule-layout {
   display: grid;
@@ -383,6 +408,283 @@ h1 { line-height: 1.2; }
 .schedule-game-row .button {
   margin-top: 0;
 }
+.schedule-game-link {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.schedule-game-link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.game-page-title {
+  margin-bottom: 8px;
+}
+.game-matchup {
+  display: grid;
+  max-width: 860px;
+  margin: 20px 0 28px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.game-matchup-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.game-matchup-row + .game-matchup-row {
+  border-top: 1px solid var(--border);
+}
+.game-matchup-row > :nth-child(2) {
+  border-left: 1px solid var(--border);
+}
+.game-overtime-row {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.game-overtime-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.game-overtime-row input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+.game-team-panel {
+  min-width: 0;
+  padding: 16px 24px;
+}
+.game-team-identity {
+  display: flex;
+  min-height: 136px;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.game-team-heading {
+  min-width: 0;
+}
+.game-team-heading h2 {
+  min-width: 0;
+  margin: 0;
+  font-size: 1.35rem;
+  overflow-wrap: anywhere;
+}
+.game-team-goal-count {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 4px 0 0;
+  color: var(--brand);
+  font-size: 1rem;
+  font-weight: 800;
+}
+.game-team-goal-count span:first-child {
+  font-size: 2rem;
+  line-height: 1;
+}
+.game-team-logo {
+  display: grid;
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  place-items: center;
+}
+.game-team-logo img,
+.game-team-logo span {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  object-fit: contain;
+}
+.game-team-logo span {
+  display: grid;
+  place-items: center;
+  background: var(--background);
+  color: var(--brand);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.game-team-logo [hidden] {
+  display: none;
+}
+.game-team-players {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.game-team-players li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+}
+.game-player-info {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 6px;
+}
+.game-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.game-player-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.game-goalie-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.game-goalie-stats[hidden] {
+  display: none;
+}
+.game-goalie-stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.game-goalie-stat input {
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.game-goalies-panel h3 {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.game-player-gp {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.game-player-gp input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+.game-goal-form {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  margin: 0;
+  padding: 16px 24px;
+}
+.game-goal-toggle {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.game-goal-toggle:hover {
+  text-decoration: underline;
+}
+.game-goal-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.game-goal-fields {
+  display: grid;
+  gap: 10px;
+}
+.game-goal-fields[hidden] {
+  display: none;
+}
+.game-goal-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.game-goal-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.game-goal-form .button {
+  justify-self: start;
+  margin-top: 0;
+}
+.game-goal-form .button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.game-goal-log {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  margin: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.game-goal-log li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+}
+.game-goal-remove {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.game-goal-remove:hover {
+  text-decoration: underline;
+}
 .league-name-toggle {
   padding: 4px 0;
   border: 0;
@@ -449,7 +751,7 @@ h1 { line-height: 1.2; }
 }
 .team-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto 52px;
   gap: 8px;
   align-items: center;
 }
@@ -457,6 +759,7 @@ h1 { line-height: 1.2; }
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   margin-top: 0;
   text-align: left;
 }
@@ -467,10 +770,118 @@ h1 { line-height: 1.2; }
   letter-spacing: 0.04em;
 }
 .team-actions {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+.team-enter-button {
+  grid-column: 2;
+  grid-row: 1;
+  margin-top: 0;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+.team-logo-link {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  text-decoration: none;
+}
+.team-logo-image,
+.team-logo-placeholder {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.team-logo-image {
+  object-fit: contain;
+}
+.team-logo-placeholder {
+  color: var(--brand);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+.team-logo-form {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  max-width: 520px;
+  margin-top: 20px;
+}
+.logo-upload-box {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 170px;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 20px;
+  overflow: hidden;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+.logo-upload-box:focus-within {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.logo-upload-box input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.logo-upload-symbol {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--brand);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+.team-logo-preview {
+  display: grid;
+  width: 152px;
+  height: 152px;
+  place-items: center;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.team-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.team-logo-preview[hidden] {
+  display: none;
+}
+.logo-upload-status {
+  margin: 0;
+  color: var(--muted);
+}
+.team-logo-form .button {
+  margin-top: 0;
 }
 .team-manage-options {
   display: flex;
@@ -619,7 +1030,15 @@ h1 { line-height: 1.2; }
   .league-row {
     grid-template-columns: 1fr;
   }
-  .team-row { grid-template-columns: 1fr; }
+  .team-row { grid-template-columns: minmax(0, 1fr) auto 52px; }
+  .team-row > .team-actions { grid-column: 1 / -1; grid-row: 2; }
+  .team-row > .team-logo-link { grid-column: 3; grid-row: 1; }
+  .game-team-panel,
+  .game-goal-form { padding: 14px 10px; }
+  .game-team-identity { min-height: 120px; gap: 10px; }
+  .game-team-identity { flex-direction: column; gap: 10px; text-align: center; }
+  .game-team-heading h2 { font-size: 1rem; }
+  .game-team-logo { width: 64px; height: 64px; flex-basis: 64px; }
   .team-player-row { grid-template-columns: minmax(0, 1fr); }
   .team-player-row .button { justify-self: start; }
   .schedule-calendar-day { min-height: 150px; padding: 8px; }

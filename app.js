@@ -47,17 +47,35 @@
     const requested = (window.location.hash || "#home").slice(1);
     const views = document.querySelectorAll("[data-view]");
     const leaguePagePrefix = "league-page/";
+    const leagueStandingsPrefix = "league-standings/";
     const leagueSchedulePrefix = "league-schedule/";
     const teamPagePrefix = "team-page/";
+    const gamePagePrefix = "game-page/";
+    const teamLogoPickerPrefix = "team-logo-picker/";
     const teamRoute = requested.indexOf(teamPagePrefix) === 0
       ? requested.slice(teamPagePrefix.length).split("/")
+      : [];
+    const gameRoute = requested.indexOf(gamePagePrefix) === 0
+      ? requested.slice(gamePagePrefix.length).split("/")
+      : [];
+    const teamLogoPickerRoute = requested.indexOf(teamLogoPickerPrefix) === 0
+      ? requested.slice(teamLogoPickerPrefix.length).split("/")
       : [];
     const scheduleLeagueId = requested.indexOf(leagueSchedulePrefix) === 0
       ? requested.slice(leagueSchedulePrefix.length)
       : "";
+    const standingsLeagueId = requested.indexOf(leagueStandingsPrefix) === 0
+      ? requested.slice(leagueStandingsPrefix.length)
+      : "";
     let leagueId = "";
     if (teamRoute.length === 2) {
       leagueId = teamRoute[0];
+    } else if (gameRoute.length === 2) {
+      leagueId = gameRoute[0];
+    } else if (teamLogoPickerRoute.length === 2) {
+      leagueId = teamLogoPickerRoute[0];
+    } else if (standingsLeagueId) {
+      leagueId = standingsLeagueId;
     } else if (scheduleLeagueId) {
       leagueId = scheduleLeagueId;
     } else if (requested.indexOf(leaguePagePrefix) === 0) {
@@ -68,18 +86,38 @@
     });
     if (selectedLeague) {
       selectedLeague.teams = Array.isArray(selectedLeague.teams) ? selectedLeague.teams : [];
+      selectedLeague.games = Array.isArray(selectedLeague.games) ? selectedLeague.games : [];
     }
     const selectedTeam = selectedLeague && teamRoute.length === 2
       ? selectedLeague.teams.find(function (team) {
         return team.id === teamRoute[1];
       })
       : null;
+    const selectedLogoTeam = selectedLeague && teamLogoPickerRoute.length === 2
+      ? selectedLeague.teams.find(function (team) {
+        return team.id === teamLogoPickerRoute[1];
+      })
+      : null;
+    const selectedGame = selectedLeague && gameRoute.length === 2
+      ? selectedLeague.games.find(function (game) {
+        return game.id === gameRoute[1];
+      })
+      : null;
     const isSchedulePage = scheduleLeagueId !== "" && selectedLeague;
+    const isStandingsPage = standingsLeagueId !== "" && selectedLeague;
+    const isGamePage = selectedGame !== null && selectedGame !== undefined;
+    const isTeamLogoPicker = selectedLogoTeam !== null && selectedLogoTeam !== undefined;
     const exists = Array.prototype.some.call(views, function (view) {
       return view.id === requested;
     });
     const current = selectedTeam
       ? "team-page-view"
+      : isTeamLogoPicker
+        ? "team-logo-picker-view"
+      : isGamePage
+        ? "game-page-view"
+      : isStandingsPage
+        ? "league-standings-view"
       : isSchedulePage
         ? "league-schedule-view"
       : selectedLeague
@@ -88,6 +126,12 @@
 
     if (selectedTeam) {
       renderTeamPage(selectedLeague, selectedTeam);
+    } else if (isTeamLogoPicker) {
+      renderTeamLogoPicker(selectedLeague, selectedLogoTeam);
+    } else if (isGamePage) {
+      renderGamePage(selectedLeague, selectedGame);
+    } else if (isStandingsPage) {
+      renderLeagueStandingsPage(selectedLeague);
     } else if (isSchedulePage) {
       renderLeagueSchedulePage(selectedLeague);
     } else if (selectedLeague) {
@@ -358,20 +402,41 @@
 
         const actions = document.createElement("div");
         actions.className = "team-actions";
+        const chooseLogoButton = document.createElement("a");
+        chooseLogoButton.className = "button secondary";
+        chooseLogoButton.href = "#team-logo-picker/" + league.id + "/" + team.id;
+        chooseLogoButton.textContent = "Upload logo";
+        const logoLink = document.createElement("a");
+        logoLink.className = "team-logo-link";
+        logoLink.href = "#team-logo-picker/" + league.id + "/" + team.id;
+        logoLink.setAttribute("aria-label", "Upload logo for " + (team.name || "Unnamed team"));
+        logoLink.title = "Upload team logo";
+        if (team.logoImage) {
+          const logoImage = document.createElement("img");
+          logoImage.className = "team-logo-image";
+          logoImage.src = team.logoImage;
+          logoImage.alt = "";
+          logoLink.appendChild(logoImage);
+        } else {
+          const logoPlaceholder = document.createElement("span");
+          logoPlaceholder.className = "team-logo-placeholder";
+          logoPlaceholder.textContent = "+";
+          logoLink.appendChild(logoPlaceholder);
+        }
         const enterButton = document.createElement("a");
-        enterButton.className = "button";
+        enterButton.className = "button team-enter-button";
         enterButton.href = "#team-page/" + league.id + "/" + team.id;
         enterButton.textContent = "Enter team";
         manageOptions.append(
           changeName,
           changeAbbreviation,
+          chooseLogoButton,
           remove,
-          enterButton,
           editForm,
           abbreviationForm
         );
         actions.append(manageOptions);
-        row.append(openButton, actions);
+        row.append(openButton, enterButton, actions, logoLink);
         list.appendChild(row);
       });
     }
@@ -396,9 +461,10 @@
     return section;
   }
 
-  function createTeamPlayersSection(team) {
+  function createTeamPlayersSection(team, league) {
     team.players = Array.isArray(team.players) ? team.players : [];
-    const section = createSection("Players", "Player stats change based on position. Goalies track saves, GA, and save percentage.");
+    league.games = Array.isArray(league.games) ? league.games : [];
+    const section = createSection("Players", "Games played, goals, assists, Saves, Goals Against, and save percentage are calculated from game records.");
     const playerList = document.createElement("div");
     playerList.className = "team-player-list";
 
@@ -417,18 +483,79 @@
     }
 
     function createGamesPlayedInput(player, playerIndex) {
-      const gamesPlayed = createStatInput("Games Played", player.gamesPlayed, playerIndex);
-      player.gamesPlayed = Math.max(0, Number(gamesPlayed.input.value) || 0);
-      gamesPlayed.input.addEventListener("input", function () {
-        player.gamesPlayed = Math.max(0, Number(gamesPlayed.input.value) || 0);
-        saveCreatedLeagues();
-      });
+      const gamesPlayedCount = league.games.filter(function (game) {
+        return Array.isArray(game.gpPlayerIds) && game.gpPlayerIds.indexOf(player.id) !== -1;
+      }).length;
+      const gamesPlayed = createStatInput("Games Played", gamesPlayedCount, playerIndex);
+      gamesPlayed.input.readOnly = true;
+      gamesPlayed.input.setAttribute("aria-readonly", "true");
       return gamesPlayed.field;
+    }
+
+    function calculatePlayerScoringTotals(player) {
+      const totals = { goals: 0, assists: 0 };
+      league.games.forEach(function (game) {
+        (Array.isArray(game.goals) ? game.goals : []).forEach(function (goal) {
+          if (goal.scorerId === player.id) {
+            totals.goals += 1;
+          }
+          if (Array.isArray(goal.assistIds) && goal.assistIds.indexOf(player.id) !== -1) {
+            totals.assists += 1;
+          }
+        });
+      });
+      return totals;
+    }
+
+    function calculateGoalieTotals(player) {
+      const totals = { saves: 0, goalsAgainst: 0 };
+      league.games.forEach(function (game) {
+        if (!Array.isArray(game.gpPlayerIds) || game.gpPlayerIds.indexOf(player.id) === -1) {
+          return;
+        }
+        const goalieStats = game.goalieStats && typeof game.goalieStats === "object"
+          ? game.goalieStats[player.id] || {}
+          : {};
+        totals.saves += Math.max(0, Number(goalieStats.saves) || 0);
+        totals.goalsAgainst += Math.max(0, Number(goalieStats.goalsAgainst) || 0);
+      });
+      return totals;
     }
 
     function renderPlayers() {
       playerList.replaceChildren();
-      team.players.forEach(function (player, index) {
+      const positions = [
+        "Center",
+        "Winger",
+        "Defenceman",
+        "Goalie"
+      ];
+      const legacyPositions = {
+        C: "Center",
+        RW: "Winger",
+        LW: "Winger",
+        RD: "Defenceman",
+        LD: "Defenceman",
+        "Right Wing": "Winger",
+        "Left Wing": "Winger",
+        "Right Winger": "Winger",
+        "Left Winger": "Winger",
+        "Right Defenceman": "Defenceman",
+        "Left Defenceman": "Defenceman",
+        "Right Defencemen": "Defenceman"
+      };
+      team.players.forEach(function (player) {
+        if (legacyPositions[player.position]) {
+          player.position = legacyPositions[player.position];
+        }
+        if (positions.indexOf(player.position) === -1) {
+          player.position = "Center";
+        }
+      });
+      const orderedPlayers = team.players.slice().sort(function (leftPlayer, rightPlayer) {
+        return positions.indexOf(leftPlayer.position) - positions.indexOf(rightPlayer.position);
+      });
+      orderedPlayers.forEach(function (player, index) {
         const playerRow = document.createElement("div");
         playerRow.className = "team-player-row";
 
@@ -446,29 +573,6 @@
 
         const position = document.createElement("select");
         position.setAttribute("aria-label", "Player " + (index + 1) + " position");
-        const positions = [
-          "Center",
-          "Right Wing",
-          "Left Wing",
-          "Right Defenceman",
-          "Left Defenceman",
-          "Winger",
-          "Defenceman",
-          "Goalie"
-        ];
-        const legacyPositions = {
-          C: "Center",
-          RW: "Right Wing",
-          LW: "Left Wing",
-          RD: "Right Defenceman",
-          LD: "Left Defenceman"
-        };
-        if (legacyPositions[player.position]) {
-          player.position = legacyPositions[player.position];
-        }
-        if (positions.indexOf(player.position) === -1) {
-          player.position = "Center";
-        }
         positions.forEach(function (value) {
           const option = document.createElement("option");
           option.value = value;
@@ -506,25 +610,18 @@
         const stats = document.createElement("div");
         stats.className = "team-player-stats";
         if (player.position === "Goalie") {
-          const saves = createStatInput("Saves", player.saves, index);
-          const goalsAgainst = createStatInput("GA", player.goalsAgainst, index);
+          const goalieTotals = calculateGoalieTotals(player);
+          const saves = createStatInput("Saves", goalieTotals.saves, index);
+          const goalsAgainst = createStatInput("Goals Against", goalieTotals.goalsAgainst, index);
+          saves.input.readOnly = true;
+          goalsAgainst.input.readOnly = true;
           const savePercentage = document.createElement("output");
           savePercentage.className = "team-player-stat-value";
           savePercentage.setAttribute("aria-label", "Player " + (index + 1) + " save percentage");
-
-          function updateSavePercentage() {
-            player.saves = Math.max(0, Number(saves.input.value) || 0);
-            player.goalsAgainst = Math.max(0, Number(goalsAgainst.input.value) || 0);
-            const shotsAgainst = player.saves + player.goalsAgainst;
-            savePercentage.textContent = shotsAgainst === 0
-              ? "—"
-              : (player.saves / shotsAgainst).toFixed(3);
-            saveCreatedLeagues();
-          }
-
-          updateSavePercentage();
-          saves.input.addEventListener("input", updateSavePercentage);
-          goalsAgainst.input.addEventListener("input", updateSavePercentage);
+          const shotsAgainst = goalieTotals.saves + goalieTotals.goalsAgainst;
+          savePercentage.textContent = shotsAgainst === 0
+            ? "—"
+            : (goalieTotals.saves / shotsAgainst).toFixed(3);
           const percentageField = document.createElement("label");
           percentageField.className = "team-player-stat";
           percentageField.textContent = "Save Percentage";
@@ -532,23 +629,16 @@
           const gamesPlayedField = createGamesPlayedInput(player, index);
           stats.append(gamesPlayedField, saves.field, goalsAgainst.field, percentageField);
         } else {
-          const goals = createStatInput("Goals", player.goals, index);
-          const assists = createStatInput("Assists", player.assists, index);
+          const scoringTotals = calculatePlayerScoringTotals(player);
+          const goals = createStatInput("Goals", scoringTotals.goals, index);
+          const assists = createStatInput("Assists", scoringTotals.assists, index);
+          goals.input.readOnly = true;
+          assists.input.readOnly = true;
           const points = document.createElement("input");
           points.type = "number";
           points.readOnly = true;
-          points.value = (Number(goals.input.value) || 0) + (Number(assists.input.value) || 0);
+          points.value = scoringTotals.goals + scoringTotals.assists;
           points.setAttribute("aria-label", "Player " + (index + 1) + " points");
-
-          function updatePoints() {
-            player.goals = Math.max(0, Number(goals.input.value) || 0);
-            player.assists = Math.max(0, Number(assists.input.value) || 0);
-            points.value = player.goals + player.assists;
-            saveCreatedLeagues();
-          }
-
-          goals.input.addEventListener("input", updatePoints);
-          assists.input.addEventListener("input", updatePoints);
           const pointsField = document.createElement("label");
           pointsField.className = "team-player-stat";
           pointsField.textContent = "Points";
@@ -632,11 +722,144 @@
 
   function renderLeaguePage(league) {
     document.getElementById("league-page-title").textContent = league.name;
-    document.getElementById("league-page-sport").textContent = league.sport;
     document.getElementById("league-page-schedule-link").href =
       "#league-schedule/" + league.id;
+    document.getElementById("league-page-standings-link").href =
+      "#league-standings/" + league.id;
     const teamsContainer = document.getElementById("league-page-teams");
     teamsContainer.replaceChildren(createTeamsSection(league));
+  }
+
+  function renderLeagueStandingsPage(league) {
+    document.getElementById("league-standings-title").textContent = league.name + " Standings";
+    document.getElementById("league-standings-league-name").textContent = league.name;
+    document.getElementById("league-standings-back").href = "#league-page/" + league.id;
+
+    const standingsByTeam = new Map();
+    league.teams.forEach(function (team) {
+      standingsByTeam.set(team.id, {
+        team: team,
+        gamesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        overtimeLosses: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        points: 0
+      });
+    });
+
+    league.games.forEach(function (game) {
+      const teamOne = standingsByTeam.get(game.teamOneId);
+      const teamTwo = standingsByTeam.get(game.teamTwoId);
+      if (!teamOne || !teamTwo) {
+        return;
+      }
+
+      const goals = Array.isArray(game.goals) ? game.goals : [];
+      const teamOneGoals = goals.filter(function (goal) { return goal.teamId === game.teamOneId; }).length;
+      const teamTwoGoals = goals.filter(function (goal) { return goal.teamId === game.teamTwoId; }).length;
+      const gpPlayerIds = Array.isArray(game.gpPlayerIds) ? game.gpPlayerIds : [];
+      const teamOneRoster = Array.isArray(teamOne.team.players) ? teamOne.team.players : [];
+      const teamTwoRoster = Array.isArray(teamTwo.team.players) ? teamTwo.team.players : [];
+      const hasTeamOneGp = teamOneRoster.some(function (player) {
+        return gpPlayerIds.indexOf(player.id) !== -1;
+      });
+      const hasTeamTwoGp = teamTwoRoster.some(function (player) {
+        return gpPlayerIds.indexOf(player.id) !== -1;
+      });
+      const hasRecordedGoals = goals.some(function (goal) {
+        return goal.teamId === game.teamOneId || goal.teamId === game.teamTwoId;
+      });
+      if (!hasTeamOneGp && !hasTeamTwoGp && !hasRecordedGoals) {
+        return;
+      }
+
+      teamOne.gamesPlayed += 1;
+      teamTwo.gamesPlayed += 1;
+      teamOne.goalsFor += teamOneGoals;
+      teamOne.goalsAgainst += teamTwoGoals;
+      teamTwo.goalsFor += teamTwoGoals;
+      teamTwo.goalsAgainst += teamOneGoals;
+
+      if (teamOneGoals > teamTwoGoals) {
+        teamOne.wins += 1;
+        teamOne.points += 2;
+        if (game.overtime) {
+          teamTwo.overtimeLosses += 1;
+          teamTwo.points += 1;
+        } else {
+          teamTwo.losses += 1;
+        }
+      } else if (teamTwoGoals > teamOneGoals) {
+        teamTwo.wins += 1;
+        teamTwo.points += 2;
+        if (game.overtime) {
+          teamOne.overtimeLosses += 1;
+          teamOne.points += 1;
+        } else {
+          teamOne.losses += 1;
+        }
+      } else {
+        teamOne.points += 1;
+        teamTwo.points += 1;
+      }
+    });
+
+    const standings = Array.from(standingsByTeam.values()).sort(function (left, right) {
+      return right.points - left.points ||
+        right.wins - left.wins ||
+        (right.goalsFor - right.goalsAgainst) - (left.goalsFor - left.goalsAgainst) ||
+        (left.team.name || "").localeCompare(right.team.name || "");
+    });
+    const table = document.createElement("table");
+    table.className = "league-standings-table";
+    const headings = ["#", "Team", "GP", "W", "L", "OTL", "GF", "GA", "GD", "PTS"];
+    const head = document.createElement("thead");
+    const headingRow = document.createElement("tr");
+    headings.forEach(function (heading) {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = heading;
+      headingRow.appendChild(cell);
+    });
+    head.appendChild(headingRow);
+    table.appendChild(head);
+
+    const body = document.createElement("tbody");
+    if (standings.length === 0) {
+      const emptyRow = document.createElement("tr");
+      const emptyCell = document.createElement("td");
+      emptyCell.colSpan = headings.length;
+      emptyCell.textContent = "No teams in this league yet.";
+      emptyRow.appendChild(emptyCell);
+      body.appendChild(emptyRow);
+    } else {
+      standings.forEach(function (standing, index) {
+        const row = document.createElement("tr");
+        const values = [
+          index + 1,
+          standing.team.name || "Unnamed team",
+          standing.gamesPlayed,
+          standing.wins,
+          standing.losses,
+          standing.overtimeLosses,
+          standing.goalsFor,
+          standing.goalsAgainst,
+          standing.goalsFor - standing.goalsAgainst,
+          standing.points
+        ];
+        values.forEach(function (value) {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+        body.appendChild(row);
+      });
+    }
+    table.appendChild(body);
+    const container = document.getElementById("league-standings-content");
+    container.replaceChildren(table);
   }
 
   function renderLeagueSchedulePage(league) {
@@ -787,7 +1010,7 @@
     gamesHeading.className = "schedule-games-heading";
     const gamesList = document.createElement("div");
     gamesList.className = "schedule-games-list";
-    formCard.append(formHeading, gameForm, gamesHeading, gamesList);
+    formCard.append(gamesHeading, gamesList, formHeading, gameForm);
 
     function teamName(teamId) {
       const team = league.teams.find(function (item) {
@@ -894,7 +1117,9 @@
       selectedGames.forEach(function (game) {
         const row = document.createElement("div");
         row.className = "schedule-game-row";
-        const details = document.createElement("div");
+        const details = document.createElement("a");
+        details.className = "schedule-game-link";
+        details.href = "#game-page/" + league.id + "/" + game.id;
         details.textContent = formatTime(game.time) + " — " +
           teamName(game.teamOneId) + " vs " + teamName(game.teamTwoId);
         const remove = document.createElement("button");
@@ -1067,7 +1292,360 @@
     document.getElementById("team-page-league-name").textContent = league.name;
     document.getElementById("team-page-back").href = "#league-page/" + league.id;
     const playersContainer = document.getElementById("team-page-players");
-    playersContainer.replaceChildren(createTeamPlayersSection(team));
+    playersContainer.replaceChildren(createTeamPlayersSection(team, league));
+  }
+
+  function renderTeamLogoPicker(league, team) {
+    document.getElementById("team-logo-picker-title").textContent =
+      "Upload a logo for " + (team.name || "Unnamed team");
+    document.getElementById("team-logo-picker-back").href = "#league-page/" + league.id;
+
+    const form = document.getElementById("team-logo-form");
+    const fileInput = document.getElementById("team-logo-file");
+    const uploadLabel = document.getElementById("team-logo-upload-label");
+    const preview = document.getElementById("team-logo-preview");
+    const previewImage = document.getElementById("team-logo-preview-image");
+    const status = document.getElementById("team-logo-upload-status");
+    const submit = document.getElementById("team-logo-submit");
+    let selectedImage = "";
+
+    fileInput.value = "";
+    uploadLabel.textContent = "Choose an image";
+    status.textContent = "";
+    submit.disabled = true;
+    preview.hidden = !team.logoImage;
+    if (team.logoImage) {
+      previewImage.src = team.logoImage;
+    } else {
+      previewImage.removeAttribute("src");
+    }
+
+    fileInput.onchange = function () {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        return;
+      }
+      selectedImage = "";
+      submit.disabled = true;
+      status.textContent = "";
+      if (TEAM_LOGO_MIME_TYPES.indexOf(file.type) === -1) {
+        status.textContent = "Choose a PNG, JPEG, GIF, or WebP image.";
+        fileInput.value = "";
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        status.textContent = "Choose an image smaller than 5 MB.";
+        fileInput.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener("load", function () {
+        const source = new Image();
+        source.addEventListener("load", function () {
+          const maxDimension = 512;
+          const scale = Math.min(1, maxDimension / Math.max(source.naturalWidth, source.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+          selectedImage = canvas.toDataURL("image/webp", 0.85);
+          if (selectedImage.indexOf("data:image/webp") !== 0) {
+            selectedImage = canvas.toDataURL("image/png");
+          }
+          previewImage.src = selectedImage;
+          preview.hidden = false;
+          uploadLabel.textContent = file.name;
+          status.textContent = "";
+          submit.disabled = false;
+        });
+        source.addEventListener("error", function () {
+          status.textContent = "That image could not be opened. Try another file.";
+        });
+        source.src = reader.result;
+      });
+      reader.addEventListener("error", function () {
+        status.textContent = "That image could not be read. Try another file.";
+      });
+      reader.readAsDataURL(file);
+    };
+
+    form.onsubmit = function (event) {
+      event.preventDefault();
+      if (!selectedImage) {
+        return;
+      }
+      team.logoImage = selectedImage;
+      delete team.logoId;
+      saveCreatedLeagues();
+      window.location.hash = "#league-page/" + league.id;
+    };
+  }
+
+  function renderGamePage(league, game) {
+    function findTeam(teamId) {
+      return league.teams.find(function (team) {
+        return team.id === teamId;
+      });
+    }
+
+    function renderTeamSide(teamId, side) {
+      const team = findTeam(teamId);
+      const name = team ? team.name || "Unnamed team" : "Unknown team";
+      const logo = document.getElementById("game-page-team-" + side + "-logo");
+      const placeholder = document.getElementById("game-page-team-" + side + "-placeholder");
+      const playersList = document.getElementById("game-page-team-" + side + "-players");
+      const goaliesList = document.getElementById("game-page-team-" + side + "-goalies");
+      document.getElementById("game-page-team-" + side + "-name").textContent = name;
+      if (team && team.logoImage) {
+        logo.src = team.logoImage;
+        logo.alt = name + " logo";
+        logo.hidden = false;
+        placeholder.hidden = true;
+      } else {
+        logo.removeAttribute("src");
+        logo.alt = "";
+        logo.hidden = true;
+        placeholder.textContent = team && team.abbreviation
+          ? team.abbreviation
+          : name.split(/\s+/).map(function (part) { return part[0]; }).join("").slice(0, 3).toUpperCase();
+        placeholder.hidden = false;
+      }
+
+      const players = team && Array.isArray(team.players) ? team.players : [];
+      function renderPlayerList(list, listedPlayers, emptyMessage) {
+        list.replaceChildren();
+        if (listedPlayers.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "muted";
+          empty.textContent = emptyMessage;
+          list.appendChild(empty);
+        }
+        listedPlayers.forEach(function (player) {
+          const item = document.createElement("li");
+          const playerName = player.name || "Unnamed player";
+          const playerInfo = document.createElement("div");
+          playerInfo.className = "game-player-info";
+          const playerHeader = document.createElement("div");
+          playerHeader.className = "game-player-header";
+          const playerNameLabel = document.createElement("span");
+          playerNameLabel.className = "game-player-name";
+          playerNameLabel.textContent = playerName;
+          const gpLabel = document.createElement("label");
+          gpLabel.className = "game-player-gp";
+          const gpCheckbox = document.createElement("input");
+          gpCheckbox.type = "checkbox";
+          gpCheckbox.id = "game-gp-" + game.id + "-" + player.id;
+          gpCheckbox.setAttribute("aria-label", "Mark " + playerName + " as played (GP)");
+          gpCheckbox.checked = Array.isArray(game.gpPlayerIds) &&
+            game.gpPlayerIds.indexOf(player.id) !== -1;
+          let goalieStatsPanel = null;
+
+          if (player.position === "Goalie") {
+            const goalieStats = game.goalieStats && typeof game.goalieStats === "object"
+              ? game.goalieStats[player.id] || {}
+              : {};
+            goalieStatsPanel = document.createElement("div");
+            goalieStatsPanel.className = "game-goalie-stats";
+            goalieStatsPanel.hidden = !gpCheckbox.checked;
+
+            [
+              { key: "saves", label: "Saves" },
+              { key: "goalsAgainst", label: "GA" }
+            ].forEach(function (stat) {
+              const statLabel = document.createElement("label");
+              statLabel.className = "game-goalie-stat";
+              statLabel.textContent = stat.label;
+              const statInput = document.createElement("input");
+              statInput.type = "number";
+              statInput.min = "0";
+              statInput.step = "1";
+              statInput.value = goalieStats[stat.key] === undefined ? "0" : goalieStats[stat.key];
+              statInput.setAttribute("aria-label", playerName + " " + stat.label);
+              statInput.addEventListener("input", function () {
+                game.goalieStats = game.goalieStats && typeof game.goalieStats === "object"
+                  ? game.goalieStats
+                  : {};
+                game.goalieStats[player.id] = game.goalieStats[player.id] || {};
+                game.goalieStats[player.id][stat.key] = Math.max(0, Number(statInput.value) || 0);
+                saveCreatedLeagues();
+              });
+              statLabel.appendChild(statInput);
+              goalieStatsPanel.appendChild(statLabel);
+            });
+            gpCheckbox.addEventListener("change", function () {
+              goalieStatsPanel.hidden = !gpCheckbox.checked;
+            });
+          }
+
+          const gpText = document.createElement("span");
+          gpText.textContent = "GP";
+          gpLabel.append(gpCheckbox, gpText);
+          playerHeader.append(playerNameLabel, gpLabel);
+          playerInfo.appendChild(playerHeader);
+          if (goalieStatsPanel) {
+            playerInfo.appendChild(goalieStatsPanel);
+          }
+          gpCheckbox.addEventListener("change", function () {
+            const gpPlayerIds = Array.isArray(game.gpPlayerIds) ? game.gpPlayerIds : [];
+            if (gpCheckbox.checked && gpPlayerIds.indexOf(player.id) === -1) {
+              gpPlayerIds.push(player.id);
+            } else if (!gpCheckbox.checked) {
+              game.gpPlayerIds = gpPlayerIds.filter(function (playerId) {
+                return playerId !== player.id;
+              });
+            }
+            if (gpCheckbox.checked) {
+              game.gpPlayerIds = gpPlayerIds;
+            }
+            saveCreatedLeagues();
+          });
+          item.appendChild(playerInfo);
+          list.appendChild(item);
+        });
+      }
+      renderPlayerList(
+        playersList,
+        players.filter(function (player) { return player.position !== "Goalie"; }),
+        "No players yet."
+      );
+      renderPlayerList(
+        goaliesList,
+        players.filter(function (player) { return player.position === "Goalie"; }),
+        "No goalies listed."
+      );
+
+      const scorerSelect = document.getElementById("game-page-team-" + side + "-scorer");
+      const assistOneSelect = document.getElementById("game-page-team-" + side + "-assist-one");
+      const assistTwoSelect = document.getElementById("game-page-team-" + side + "-assist-two");
+      function populatePlayerSelect(select, placeholder) {
+        select.replaceChildren();
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = placeholder;
+        select.appendChild(emptyOption);
+        players.forEach(function (player) {
+          const option = document.createElement("option");
+          option.value = player.id;
+          option.textContent = player.name || "Unnamed player";
+          select.appendChild(option);
+        });
+      }
+      populatePlayerSelect(scorerSelect, "Choose scorer");
+      populatePlayerSelect(assistOneSelect, "No assist");
+      populatePlayerSelect(assistTwoSelect, "No assist");
+
+      const goalForm = document.getElementById("game-page-team-" + side + "-goal-form");
+      const goalLog = document.getElementById("game-page-team-" + side + "-goals");
+      const goalToggle = goalForm.querySelector(".game-goal-toggle");
+      const goalFields = goalForm.querySelector(".game-goal-fields");
+      goalToggle.disabled = players.length === 0;
+      goalToggle.onclick = function () {
+        goalFields.hidden = !goalFields.hidden;
+        goalToggle.setAttribute("aria-expanded", goalFields.hidden ? "false" : "true");
+      };
+      goalForm.querySelector("button[type='submit']").disabled = players.length === 0;
+
+      function renderGoals() {
+        goalLog.replaceChildren();
+        const goals = (Array.isArray(game.goals) ? game.goals : []).filter(function (goal) {
+          return goal.teamId === teamId;
+        });
+        document.getElementById("game-page-team-" + side + "-goal-count").textContent = goals.length;
+        if (goals.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "muted";
+          empty.textContent = "No goals yet.";
+          goalLog.appendChild(empty);
+        }
+        goals.forEach(function (goal, index) {
+          const scorer = players.find(function (player) {
+            return player.id === goal.scorerId;
+          });
+          const assists = (Array.isArray(goal.assistIds) ? goal.assistIds : [])
+            .map(function (playerId) {
+              return players.find(function (player) {
+                return player.id === playerId;
+              });
+            })
+            .filter(Boolean);
+          const entry = document.createElement("li");
+            const description = document.createElement("span");
+            description.textContent = (index + 1) + ". " +
+            (scorer ? scorer.name || "Unnamed player" : "Unknown scorer") +
+            (assists.length ? " (" + assists.map(function (player) {
+              return player.name || "Unnamed player";
+            }).join(", ") + ")" : "");
+            const removeGoal = document.createElement("button");
+            removeGoal.type = "button";
+            removeGoal.className = "game-goal-remove";
+            removeGoal.textContent = "Remove";
+            removeGoal.setAttribute("aria-label", "Remove goal " + (index + 1));
+            removeGoal.addEventListener("click", function () {
+              game.goals = game.goals.filter(function (savedGoal) {
+                return savedGoal.id !== goal.id;
+              });
+              saveCreatedLeagues();
+              renderGoals();
+            });
+            entry.append(description, removeGoal);
+          goalLog.appendChild(entry);
+        });
+      }
+
+      [scorerSelect, assistOneSelect, assistTwoSelect].forEach(function (select) {
+        select.onchange = function () {
+          assistOneSelect.setCustomValidity("");
+          assistTwoSelect.setCustomValidity("");
+        };
+      });
+      goalForm.onsubmit = function (event) {
+        event.preventDefault();
+        if (!scorerSelect.value) {
+          scorerSelect.reportValidity();
+          return;
+        }
+        const assistIds = [assistOneSelect.value, assistTwoSelect.value].filter(Boolean);
+        let duplicateAssist = null;
+        if (assistOneSelect.value && assistOneSelect.value === scorerSelect.value) {
+          duplicateAssist = assistOneSelect;
+        } else if (assistTwoSelect.value && assistTwoSelect.value === scorerSelect.value) {
+          duplicateAssist = assistTwoSelect;
+        } else if (assistOneSelect.value && assistOneSelect.value === assistTwoSelect.value) {
+          duplicateAssist = assistTwoSelect;
+        }
+        if (duplicateAssist) {
+          duplicateAssist.setCustomValidity("Choose a different player for each role.");
+          duplicateAssist.reportValidity();
+          return;
+        }
+
+        game.goals = Array.isArray(game.goals) ? game.goals : [];
+        game.goals.push({
+          id: "goal-" + Date.now() + "-" + game.goals.length,
+          teamId: teamId,
+          scorerId: scorerSelect.value,
+          assistIds: assistIds
+        });
+        saveCreatedLeagues();
+        scorerSelect.value = "";
+        assistOneSelect.value = "";
+        assistTwoSelect.value = "";
+        renderGoals();
+      };
+      renderGoals();
+    }
+
+    renderTeamSide(game.teamOneId, "one");
+    renderTeamSide(game.teamTwoId, "two");
+    const overtimeCheckbox = document.getElementById("game-overtime");
+    overtimeCheckbox.checked = game.overtime === true;
+    overtimeCheckbox.onchange = function () {
+      game.overtime = overtimeCheckbox.checked;
+      saveCreatedLeagues();
+    };
+    document.getElementById("game-page-league-name").textContent = league.name;
+    document.getElementById("game-page-back").href = "#league-schedule/" + league.id;
   }
 
   function renderLeagues() {

@@ -90,8 +90,15 @@
         <a class="button" id="league-page-schedule-link">League Schedule</a>
       </div>
       <h1 id="league-page-title"></h1>
-      <p class="muted" id="league-page-sport"></p>
+      <a class="button secondary" id="league-page-standings-link">League Standings</a>
       <div id="league-page-teams"></div>
+    </section>
+
+    <section id="league-standings-view" data-view hidden>
+      <a class="button secondary" id="league-standings-back">Back to league</a>
+      <h1 id="league-standings-title"></h1>
+      <p class="muted" id="league-standings-league-name"></p>
+      <div class="league-standings-wrap" id="league-standings-content"></div>
     </section>
 
     <section id="league-schedule-view" data-view hidden>
@@ -101,11 +108,118 @@
       <div id="league-schedule-content"></div>
     </section>
 
+    <section id="game-page-view" data-view hidden>
+      <a class="button secondary" id="game-page-back">Back to schedule</a>
+      <h1 class="game-page-title">Game matchup</h1>
+      <div class="game-matchup">
+        <div class="game-matchup-row">
+          <div class="game-team-panel game-team-identity">
+            <div class="game-team-logo">
+              <img id="game-page-team-one-logo" alt="">
+              <span id="game-page-team-one-placeholder" aria-hidden="true"></span>
+            </div>
+            <div class="game-team-heading">
+              <h2 id="game-page-team-one-name"></h2>
+              <p class="game-team-goal-count"><span id="game-page-team-one-goal-count">0</span><span>Goals</span></p>
+            </div>
+          </div>
+          <div class="game-team-panel game-team-identity">
+            <div class="game-team-logo">
+              <img id="game-page-team-two-logo" alt="">
+              <span id="game-page-team-two-placeholder" aria-hidden="true"></span>
+            </div>
+            <div class="game-team-heading">
+              <h2 id="game-page-team-two-name"></h2>
+              <p class="game-team-goal-count"><span id="game-page-team-two-goal-count">0</span><span>Goals</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="game-matchup-row">
+          <div class="game-team-panel">
+            <ul class="game-team-players" id="game-page-team-one-players"></ul>
+          </div>
+          <div class="game-team-panel">
+            <ul class="game-team-players" id="game-page-team-two-players"></ul>
+          </div>
+        </div>
+        <div class="game-matchup-row">
+          <form class="game-goal-form" id="game-page-team-one-goal-form">
+            <button class="game-goal-toggle" type="button" aria-expanded="false" aria-controls="game-page-team-one-goal-fields">Add a goal</button>
+            <div class="game-goal-fields" id="game-page-team-one-goal-fields" hidden>
+              <label>Scorer
+                <select id="game-page-team-one-scorer" required></select>
+              </label>
+              <label>Assist 1
+                <select id="game-page-team-one-assist-one"></select>
+              </label>
+              <label>Assist 2
+                <select id="game-page-team-one-assist-two"></select>
+              </label>
+              <button class="button secondary" type="submit">Add goal</button>
+            </div>
+          </form>
+          <form class="game-goal-form" id="game-page-team-two-goal-form">
+            <button class="game-goal-toggle" type="button" aria-expanded="false" aria-controls="game-page-team-two-goal-fields">Add a goal</button>
+            <div class="game-goal-fields" id="game-page-team-two-goal-fields" hidden>
+              <label>Scorer
+                <select id="game-page-team-two-scorer" required></select>
+              </label>
+              <label>Assist 1
+                <select id="game-page-team-two-assist-one"></select>
+              </label>
+              <label>Assist 2
+                <select id="game-page-team-two-assist-two"></select>
+              </label>
+              <button class="button secondary" type="submit">Add goal</button>
+            </div>
+          </form>
+        </div>
+        <div class="game-matchup-row">
+          <ul class="game-team-panel game-goal-log" id="game-page-team-one-goals" aria-label="Team one goals"></ul>
+          <ul class="game-team-panel game-goal-log" id="game-page-team-two-goals" aria-label="Team two goals"></ul>
+        </div>
+        <div class="game-matchup-row game-goalies-row">
+          <section class="game-team-panel game-goalies-panel">
+            <h3>Goalies</h3>
+            <ul class="game-team-players" id="game-page-team-one-goalies"></ul>
+          </section>
+          <section class="game-team-panel game-goalies-panel">
+            <h3>Goalies</h3>
+            <ul class="game-team-players" id="game-page-team-two-goalies"></ul>
+          </section>
+        </div>
+        <div class="game-overtime-row">
+          <label for="game-overtime">
+            <input id="game-overtime" type="checkbox">
+            <span>Overtime</span>
+          </label>
+        </div>
+      </div>
+      <p class="muted" id="game-page-league-name"></p>
+    </section>
+
     <section id="team-page-view" data-view hidden>
       <a class="button secondary" id="team-page-back" href="#manage">Back to league</a>
       <h1 id="team-page-title"></h1>
       <p class="muted" id="team-page-league-name"></p>
       <div id="team-page-players"></div>
+    </section>
+
+    <section id="team-logo-picker-view" data-view hidden>
+      <a class="button secondary" id="team-logo-picker-back">Back to league</a>
+      <h1 id="team-logo-picker-title"></h1>
+      <form class="team-logo-form" id="team-logo-form">
+        <label class="logo-upload-box" for="team-logo-file">
+          <span class="logo-upload-symbol" aria-hidden="true">+</span>
+          <span id="team-logo-upload-label">Choose an image</span>
+          <input id="team-logo-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp">
+        </label>
+        <div class="team-logo-preview" id="team-logo-preview" hidden>
+          <img id="team-logo-preview-image" alt="Preview of team logo">
+        </div>
+        <p class="logo-upload-status" id="team-logo-upload-status" role="status" aria-live="polite"></p>
+        <button class="button" id="team-logo-submit" type="submit" disabled>Use logo</button>
+      </form>
     </section>
 
   </main>
