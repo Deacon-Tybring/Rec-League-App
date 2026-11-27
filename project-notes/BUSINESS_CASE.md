@@ -1,28 +1,18 @@
 # Business case
 
-Your prototype shows *what* the product looks like. This document explains *why* it could become a business. Answer in your own words and refer to course concepts by name. See the term project brief on Moodle for length and grading.
-
 ## 1. The idea
 
-- **Customer:** Who exactly is it for?
+This product is for individuals who participate in hockey rec leagues and want a simple way to track their stats games and share that with the rest of the league. 
 
-This product is for individuals who participate in hockey rec leagues and want a way to track their stats games and share that with the rest of the league.
+Most rec leagues today do not track any statistics and manually track games and if they do often times the games and stats are not available to the players. 
 
-- **Problem:** What problem do they have today, and how do they solve it now?
+My product allows for a simple and easy way to track stats and games coming with a fully connected tracking program. All you have to enter the game information and it automatically populates stats like Goals, Assists, Points, Saves, Goals Against, Shutouts, Save Percentage, and Games Played. It also has a league schedule to help players see the games and when they are going to take place. This makes it so each game can be tracked and recorded and the rest is done for you.
 
-Most rec leagues today do not track any statistics and manually track games and if they do often times the games and stats are not available to the players.
-
-- **Solution:** What does your product do differently or better?
-
-My product allows for a simple and easy way to track stats and games coming with a fully connected tracking program. All you have to enter the game information and it automatically populates stats like Goals, Assists, Points, Saves, Goals Against, Shutouts, Save Percentage, and Games Played. It also has a league schedule to help players see the games and when they are going to take place.
-
-- **Revenue:** How does the company make money?
-
-The company will make money by selling ad space on the website/app and selling a one time remove ad option for $1.49.
+The company will make money by selling ad space on the website/app and selling a one time remove ad option for $1.49. This will make the product accessable to those who do not want to pay but also more convient to those who are willing while also creating a subtantial revenue source.
 
 ## 2. Where IT creates value
 
-Which parts of the value chain does your product change, and how? Which course concepts apply (e.g. scale, distribution channels, differentiation, data, switching costs)?
+IT's main value comes in the form of accessable data integration so help ease the difficulties of running a rec hockey league. My product RinkLink gives hockey rec leagues a simple app to manage schedules, standings, and player statistics for their rec league in a conventient and automized way by automatically inputing game statistics into player profiles. It removes the need for manual tracking and makes all the league information available to every player. It automatically calculates save percentage and shutouts so you dont have to. It also determines based on the score of a game who won and updates the league standing including if it was an over time loss. The value in this product lies in its affordability, convenience, and better engagement for players. Once users start using this product they may be hesitant to switch do to switching costs such as saved player statistics, game scores, and formating the players, teams, and schedule. This product will also provide value to companies looking to market to the hockey demographic as by marketing on our platform through ads they will be targeting a very specific demographic of people. This could also lead to partnerships in the future with companies like custom jersey manufactorers, Graphic designers for team logos, etc. 
 
 ## 3. Network effects
 
