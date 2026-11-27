@@ -85,10 +85,20 @@
     </section>
 
     <section id="league-page-view" data-view hidden>
-      <a class="button secondary" href="#manage">Back to manage leagues</a>
+      <div class="league-page-header">
+        <a class="button secondary" href="#manage">Back to manage leagues</a>
+        <a class="button" id="league-page-schedule-link">League Schedule</a>
+      </div>
       <h1 id="league-page-title"></h1>
       <p class="muted" id="league-page-sport"></p>
       <div id="league-page-teams"></div>
+    </section>
+
+    <section id="league-schedule-view" data-view hidden>
+      <a class="button secondary" id="league-schedule-back">Back to league</a>
+      <h1 id="league-schedule-title"></h1>
+      <p class="muted" id="league-schedule-sport"></p>
+      <div id="league-schedule-content"></div>
     </section>
 
     <section id="team-page-view" data-view hidden>

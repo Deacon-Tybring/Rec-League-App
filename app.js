@@ -47,15 +47,22 @@
     const requested = (window.location.hash || "#home").slice(1);
     const views = document.querySelectorAll("[data-view]");
     const leaguePagePrefix = "league-page/";
+    const leagueSchedulePrefix = "league-schedule/";
     const teamPagePrefix = "team-page/";
     const teamRoute = requested.indexOf(teamPagePrefix) === 0
       ? requested.slice(teamPagePrefix.length).split("/")
       : [];
-    const leagueId = teamRoute.length === 2
-      ? teamRoute[0]
-      : requested.indexOf(leaguePagePrefix) === 0
-      ? requested.slice(leaguePagePrefix.length)
+    const scheduleLeagueId = requested.indexOf(leagueSchedulePrefix) === 0
+      ? requested.slice(leagueSchedulePrefix.length)
       : "";
+    let leagueId = "";
+    if (teamRoute.length === 2) {
+      leagueId = teamRoute[0];
+    } else if (scheduleLeagueId) {
+      leagueId = scheduleLeagueId;
+    } else if (requested.indexOf(leaguePagePrefix) === 0) {
+      leagueId = requested.slice(leaguePagePrefix.length);
+    }
     const selectedLeague = createdLeagues.find(function (league) {
       return league.id === leagueId;
     });
@@ -67,17 +74,22 @@
         return team.id === teamRoute[1];
       })
       : null;
+    const isSchedulePage = scheduleLeagueId !== "" && selectedLeague;
     const exists = Array.prototype.some.call(views, function (view) {
       return view.id === requested;
     });
     const current = selectedTeam
       ? "team-page-view"
+      : isSchedulePage
+        ? "league-schedule-view"
       : selectedLeague
         ? "league-page-view"
       : exists ? requested : "home";
 
     if (selectedTeam) {
       renderTeamPage(selectedLeague, selectedTeam);
+    } else if (isSchedulePage) {
+      renderLeagueSchedulePage(selectedLeague);
     } else if (selectedLeague) {
       renderLeaguePage(selectedLeague);
     }
@@ -110,6 +122,13 @@
 
   function saveCreatedLeagues() {
     storage.set("createdLeagues", createdLeagues);
+  }
+
+  function toLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return year + "-" + month + "-" + day;
   }
 
   function makeLeagueRow(league) {
@@ -227,7 +246,12 @@
         const openButton = document.createElement("button");
         openButton.type = "button";
         openButton.className = "button secondary team-open";
-        openButton.textContent = team.name || "Unnamed team";
+        const abbreviationDisplay = document.createElement("span");
+        abbreviationDisplay.className = "team-abbreviation";
+        abbreviationDisplay.textContent = team.abbreviation || "—";
+        const teamNameDisplay = document.createElement("span");
+        teamNameDisplay.textContent = team.name || "Unnamed team";
+        openButton.append(teamNameDisplay, abbreviationDisplay);
         const manageOptions = document.createElement("div");
         manageOptions.className = "team-manage-options";
         manageOptions.id = "team-options-" + team.id;
@@ -243,6 +267,11 @@
         changeName.type = "button";
         changeName.className = "button secondary";
         changeName.textContent = "Change name";
+
+        const changeAbbreviation = document.createElement("button");
+        changeAbbreviation.type = "button";
+        changeAbbreviation.className = "button secondary";
+        changeAbbreviation.textContent = "Change abbreviation";
 
         const remove = document.createElement("button");
         remove.type = "button";
@@ -268,10 +297,42 @@
         saveName.textContent = "Save name";
         editForm.append(nameInput, saveName);
 
+        const abbreviationForm = document.createElement("form");
+        abbreviationForm.className = "team-abbreviation-form";
+        abbreviationForm.hidden = true;
+        const abbreviationInput = document.createElement("input");
+        abbreviationInput.type = "text";
+        abbreviationInput.value = team.abbreviation || "";
+        abbreviationInput.required = true;
+        abbreviationInput.maxLength = 3;
+        abbreviationInput.pattern = "[A-Z]{3}";
+        abbreviationInput.autocomplete = "off";
+        abbreviationInput.setAttribute("aria-label", "Team abbreviation (3 uppercase letters)");
+        const saveAbbreviation = document.createElement("button");
+        saveAbbreviation.type = "submit";
+        saveAbbreviation.className = "button";
+        saveAbbreviation.textContent = "Save abbreviation";
+        abbreviationForm.append(abbreviationInput, saveAbbreviation);
+
+        abbreviationInput.addEventListener("input", function () {
+          abbreviationInput.value = abbreviationInput.value
+            .replace(/[^a-z]/gi, "")
+            .toUpperCase()
+            .slice(0, 3);
+        });
+
         changeName.addEventListener("click", function () {
           editForm.hidden = !editForm.hidden;
+          abbreviationForm.hidden = true;
           if (!editForm.hidden) {
             nameInput.focus();
+          }
+        });
+        changeAbbreviation.addEventListener("click", function () {
+          abbreviationForm.hidden = !abbreviationForm.hidden;
+          editForm.hidden = true;
+          if (!abbreviationForm.hidden) {
+            abbreviationInput.focus();
           }
         });
         editForm.addEventListener("submit", function (event) {
@@ -284,6 +345,16 @@
           saveCreatedLeagues();
           renderTeams();
         });
+        abbreviationForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          if (!abbreviationInput.checkValidity()) {
+            abbreviationInput.reportValidity();
+            return;
+          }
+          team.abbreviation = abbreviationInput.value;
+          saveCreatedLeagues();
+          renderTeams();
+        });
 
         const actions = document.createElement("div");
         actions.className = "team-actions";
@@ -291,7 +362,14 @@
         enterButton.className = "button";
         enterButton.href = "#team-page/" + league.id + "/" + team.id;
         enterButton.textContent = "Enter team";
-        manageOptions.append(changeName, remove, enterButton, editForm);
+        manageOptions.append(
+          changeName,
+          changeAbbreviation,
+          remove,
+          enterButton,
+          editForm,
+          abbreviationForm
+        );
         actions.append(manageOptions);
         row.append(openButton, actions);
         list.appendChild(row);
@@ -306,6 +384,7 @@
       league.teams.push({
         id: "team-" + Date.now() + "-" + league.teams.length,
         name: "",
+        abbreviation: "",
         players: []
       });
       saveCreatedLeagues();
@@ -335,6 +414,16 @@
       field.textContent = labelText;
       field.appendChild(input);
       return { input: input, field: field };
+    }
+
+    function createGamesPlayedInput(player, playerIndex) {
+      const gamesPlayed = createStatInput("Games Played", player.gamesPlayed, playerIndex);
+      player.gamesPlayed = Math.max(0, Number(gamesPlayed.input.value) || 0);
+      gamesPlayed.input.addEventListener("input", function () {
+        player.gamesPlayed = Math.max(0, Number(gamesPlayed.input.value) || 0);
+        saveCreatedLeagues();
+      });
+      return gamesPlayed.field;
     }
 
     function renderPlayers() {
@@ -440,7 +529,8 @@
           percentageField.className = "team-player-stat";
           percentageField.textContent = "Save Percentage";
           percentageField.appendChild(savePercentage);
-          stats.append(saves.field, goalsAgainst.field, percentageField);
+          const gamesPlayedField = createGamesPlayedInput(player, index);
+          stats.append(gamesPlayedField, saves.field, goalsAgainst.field, percentageField);
         } else {
           const goals = createStatInput("Goals", player.goals, index);
           const assists = createStatInput("Assists", player.assists, index);
@@ -463,7 +553,8 @@
           pointsField.className = "team-player-stat";
           pointsField.textContent = "Points";
           pointsField.appendChild(points);
-          stats.append(goals.field, assists.field, pointsField);
+          const gamesPlayedField = createGamesPlayedInput(player, index);
+          stats.append(gamesPlayedField, goals.field, assists.field, pointsField);
         }
 
         const removePlayer = document.createElement("button");
@@ -527,7 +618,8 @@
         name: "",
         position: "Center",
         goals: 0,
-        assists: 0
+        assists: 0,
+        gamesPlayed: 0
       });
       saveCreatedLeagues();
       renderPlayers();
@@ -541,8 +633,433 @@
   function renderLeaguePage(league) {
     document.getElementById("league-page-title").textContent = league.name;
     document.getElementById("league-page-sport").textContent = league.sport;
+    document.getElementById("league-page-schedule-link").href =
+      "#league-schedule/" + league.id;
     const teamsContainer = document.getElementById("league-page-teams");
     teamsContainer.replaceChildren(createTeamsSection(league));
+  }
+
+  function renderLeagueSchedulePage(league) {
+    document.getElementById("league-schedule-title").textContent =
+      league.name + " Schedule";
+    document.getElementById("league-schedule-sport").textContent = league.sport;
+    document.getElementById("league-schedule-back").href =
+      "#league-page/" + league.id;
+
+    league.teams = Array.isArray(league.teams) ? league.teams : [];
+    league.games = Array.isArray(league.games) ? league.games : [];
+
+    const container = document.getElementById("league-schedule-content");
+    container.replaceChildren();
+
+    const today = new Date();
+    let selectedDate = toLocalDateString(today);
+    let displayWeek = startOfWeek(today);
+
+    const layout = document.createElement("div");
+    layout.className = "schedule-layout";
+
+    const calendarCard = document.createElement("section");
+    calendarCard.className = "schedule-calendar";
+
+    const calendarHeader = document.createElement("div");
+    calendarHeader.className = "schedule-calendar-header";
+    const previousWeek = document.createElement("button");
+    previousWeek.type = "button";
+    previousWeek.className = "button secondary";
+    previousWeek.textContent = "Previous week";
+    const weekLabel = document.createElement("button");
+    weekLabel.type = "button";
+    weekLabel.className = "schedule-week-toggle";
+    weekLabel.setAttribute("aria-label", "Choose year, month, and week");
+    weekLabel.setAttribute("aria-expanded", "false");
+    const nextWeek = document.createElement("button");
+    nextWeek.type = "button";
+    nextWeek.className = "button secondary";
+    nextWeek.textContent = "Next week";
+    calendarHeader.append(previousWeek, weekLabel, nextWeek);
+
+    const weekPicker = document.createElement("form");
+    weekPicker.className = "schedule-week-picker";
+    weekPicker.hidden = true;
+    weekPicker.id = "schedule-week-picker";
+    weekLabel.setAttribute("aria-controls", weekPicker.id);
+
+    const yearLabel = document.createElement("label");
+    yearLabel.textContent = "Year";
+    const yearInput = document.createElement("input");
+    yearInput.type = "number";
+    yearInput.min = "1900";
+    yearInput.max = "2100";
+    yearInput.step = "1";
+    yearInput.required = true;
+    yearInput.value = today.getFullYear();
+    yearLabel.appendChild(yearInput);
+
+    const monthLabel = document.createElement("label");
+    monthLabel.textContent = "Month";
+    const monthSelect = document.createElement("select");
+    for (let month = 0; month < 12; month += 1) {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = new Date(2000, month, 1).toLocaleDateString(undefined, {
+        month: "long"
+      });
+      monthSelect.appendChild(option);
+    }
+    monthSelect.value = today.getMonth();
+    monthLabel.appendChild(monthSelect);
+
+    const weekLabelField = document.createElement("label");
+    weekLabelField.textContent = "Week";
+    const weekSelect = document.createElement("select");
+    weekLabelField.appendChild(weekSelect);
+
+    const goToWeek = document.createElement("button");
+    goToWeek.type = "submit";
+    goToWeek.className = "button";
+    goToWeek.textContent = "Go to week";
+    weekPicker.append(yearLabel, monthLabel, weekLabelField, goToWeek);
+
+    const calendarGrid = document.createElement("div");
+    calendarGrid.className = "schedule-calendar-grid";
+
+    const formCard = document.createElement("section");
+    formCard.className = "schedule-game-panel";
+    const formHeading = document.createElement("h2");
+    formHeading.textContent = "Add a game";
+
+    const gameForm = document.createElement("form");
+    gameForm.className = "schedule-game-form";
+
+    const dateLabel = document.createElement("label");
+    dateLabel.textContent = "Date";
+    const dateInput = document.createElement("input");
+    dateInput.type = "date";
+    dateInput.value = selectedDate;
+    dateInput.required = true;
+    dateLabel.appendChild(dateInput);
+
+    const teamOneLabel = document.createElement("label");
+    teamOneLabel.textContent = "Team 1";
+    const teamOneSelect = document.createElement("select");
+    teamOneSelect.required = true;
+    teamOneLabel.appendChild(teamOneSelect);
+
+    const teamTwoLabel = document.createElement("label");
+    teamTwoLabel.textContent = "Team 2";
+    const teamTwoSelect = document.createElement("select");
+    teamTwoSelect.required = true;
+    teamTwoLabel.appendChild(teamTwoSelect);
+
+    function populateTeamSelect(select, placeholder) {
+      select.replaceChildren();
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = placeholder;
+      select.appendChild(emptyOption);
+      league.teams.forEach(function (team) {
+        const option = document.createElement("option");
+        option.value = team.id;
+        option.textContent = team.name || "Unnamed team";
+        select.appendChild(option);
+      });
+    }
+
+    populateTeamSelect(teamOneSelect, "Choose team");
+    populateTeamSelect(teamTwoSelect, "Choose team");
+
+    const timeLabel = document.createElement("label");
+    timeLabel.textContent = "Time";
+    const timeInput = document.createElement("input");
+    timeInput.type = "time";
+    timeInput.required = true;
+    timeLabel.appendChild(timeInput);
+
+    const submitGame = document.createElement("button");
+    submitGame.type = "submit";
+    submitGame.className = "button";
+    submitGame.textContent = "Add game";
+
+    gameForm.append(dateLabel, teamOneLabel, teamTwoLabel, timeLabel, submitGame);
+
+    const gamesHeading = document.createElement("h2");
+    gamesHeading.className = "schedule-games-heading";
+    const gamesList = document.createElement("div");
+    gamesList.className = "schedule-games-list";
+    formCard.append(formHeading, gameForm, gamesHeading, gamesList);
+
+    function teamName(teamId) {
+      const team = league.teams.find(function (item) {
+        return item.id === teamId;
+      });
+      return team ? team.name || "Unnamed team" : "Unknown team";
+    }
+
+    function teamAbbreviation(teamId) {
+      const team = league.teams.find(function (item) {
+        return item.id === teamId;
+      });
+      if (!team) {
+        return "UNK";
+      }
+      const abbreviation = team.abbreviation ||
+        (team.name || "").replace(/[^a-z]/gi, "").slice(0, 3);
+      return abbreviation.toUpperCase().slice(0, 3) || "UNK";
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString + "T12:00:00");
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function startOfWeek(date) {
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      start.setDate(start.getDate() - start.getDay());
+      return start;
+    }
+
+    function formatShortDate(date) {
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+
+    function populateWeeks() {
+      const year = Number(yearInput.value);
+      const month = Number(monthSelect.value);
+      weekSelect.replaceChildren();
+      if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+        return;
+      }
+
+      const firstOfMonth = new Date(year, month, 1);
+      const lastOfMonth = new Date(year, month + 1, 0);
+      let weekStart = startOfWeek(firstOfMonth);
+      let weekNumber = 1;
+
+      while (weekStart <= lastOfMonth) {
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const anchor = weekStart < firstOfMonth ? firstOfMonth : weekStart;
+        const anchorDate = toLocalDateString(anchor);
+        const option = document.createElement("option");
+        option.value = anchorDate;
+        option.textContent = "Week " + weekNumber + " (" +
+          formatShortDate(weekStart) + " - " + formatShortDate(weekEnd) + ")";
+        weekSelect.appendChild(option);
+        if (selectedDate >= toLocalDateString(weekStart) &&
+            selectedDate <= toLocalDateString(weekEnd)) {
+          option.selected = true;
+        }
+        weekStart.setDate(weekStart.getDate() + 7);
+        weekNumber += 1;
+      }
+    }
+
+    function syncWeekPicker() {
+      const selected = new Date(selectedDate + "T12:00:00");
+      yearInput.value = selected.getFullYear();
+      monthSelect.value = selected.getMonth();
+      populateWeeks();
+    }
+
+    function formatTime(timeString) {
+      const parts = timeString.split(":");
+      const date = new Date(2000, 0, 1, Number(parts[0]), Number(parts[1] || 0));
+      return date.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function renderGames() {
+      gamesHeading.textContent = formatDate(selectedDate);
+      gamesList.replaceChildren();
+      const selectedGames = league.games
+        .filter(function (game) { return game.date === selectedDate; })
+        .sort(function (a, b) { return a.time.localeCompare(b.time); });
+
+      if (selectedGames.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No games scheduled.";
+        gamesList.appendChild(empty);
+        return;
+      }
+
+      selectedGames.forEach(function (game) {
+        const row = document.createElement("div");
+        row.className = "schedule-game-row";
+        const details = document.createElement("div");
+        details.textContent = formatTime(game.time) + " — " +
+          teamName(game.teamOneId) + " vs " + teamName(game.teamTwoId);
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "button secondary";
+        remove.textContent = "Remove";
+        remove.addEventListener("click", function () {
+          league.games = league.games.filter(function (item) {
+            return item.id !== game.id;
+          });
+          saveCreatedLeagues();
+          renderCalendar();
+          renderGames();
+        });
+        row.append(details, remove);
+        gamesList.appendChild(row);
+      });
+    }
+
+    function selectDate(dateString) {
+      selectedDate = dateString;
+      displayWeek = startOfWeek(new Date(dateString + "T12:00:00"));
+      dateInput.value = dateString;
+      syncWeekPicker();
+      renderCalendar();
+      renderGames();
+    }
+
+    function renderCalendar() {
+      const weekEnd = new Date(displayWeek);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weekLabel.textContent = formatShortDate(displayWeek) + " - " +
+        weekEnd.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        });
+      calendarGrid.replaceChildren();
+
+      for (let index = 0; index < 7; index += 1) {
+        const date = new Date(displayWeek);
+        date.setDate(date.getDate() + index);
+        const dateString = toLocalDateString(date);
+        const dayButton = document.createElement("button");
+        dayButton.type = "button";
+        dayButton.className = "schedule-calendar-day";
+        const weekday = document.createElement("span");
+        weekday.className = "schedule-calendar-weekday";
+        weekday.textContent = date.toLocaleDateString(undefined, { weekday: "short" });
+        const dayNumber = document.createElement("span");
+        dayNumber.className = "schedule-calendar-day-number";
+        dayNumber.textContent = date.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric"
+        });
+        dayButton.append(weekday, dayNumber);
+        const dayGames = league.games.filter(function (game) {
+          return game.date === dateString;
+        });
+        dayButton.setAttribute(
+          "aria-label",
+          formatDate(dateString) + (dayGames.length
+            ? ": " + dayGames.map(function (game) {
+              return teamAbbreviation(game.teamOneId) + " vs " +
+                teamAbbreviation(game.teamTwoId);
+            }).join(", ")
+            : "")
+        );
+        if (dateString === selectedDate) {
+          dayButton.classList.add("selected");
+        }
+        if (dayGames.length) {
+          dayButton.classList.add("has-game");
+          dayGames.forEach(function (game) {
+            const matchup = document.createElement("span");
+            matchup.className = "schedule-calendar-matchup";
+            matchup.textContent = teamAbbreviation(game.teamOneId) + " VS " +
+              teamAbbreviation(game.teamTwoId);
+            dayButton.appendChild(matchup);
+          });
+        }
+        dayButton.addEventListener("click", function () {
+          selectDate(dateString);
+        });
+        calendarGrid.appendChild(dayButton);
+      }
+    }
+
+    previousWeek.addEventListener("click", function () {
+      const date = new Date(selectedDate + "T12:00:00");
+      date.setDate(date.getDate() - 7);
+      selectDate(toLocalDateString(date));
+    });
+    nextWeek.addEventListener("click", function () {
+      const date = new Date(selectedDate + "T12:00:00");
+      date.setDate(date.getDate() + 7);
+      selectDate(toLocalDateString(date));
+    });
+
+    weekLabel.addEventListener("click", function () {
+      weekPicker.hidden = !weekPicker.hidden;
+      weekLabel.setAttribute("aria-expanded", weekPicker.hidden ? "false" : "true");
+      if (!weekPicker.hidden) {
+        yearInput.focus();
+      }
+    });
+    yearInput.addEventListener("input", populateWeeks);
+    monthSelect.addEventListener("change", populateWeeks);
+    weekPicker.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (!yearInput.checkValidity() || !weekSelect.value) {
+        yearInput.reportValidity();
+        return;
+      }
+      weekPicker.hidden = true;
+      weekLabel.setAttribute("aria-expanded", "false");
+      selectDate(weekSelect.value);
+    });
+
+    dateInput.addEventListener("change", function () {
+      if (!dateInput.value) {
+        return;
+      }
+      selectDate(dateInput.value);
+    });
+
+    gameForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (!dateInput.value || !timeInput.value ||
+          !teamOneSelect.value || !teamTwoSelect.value) {
+        return;
+      }
+      if (teamOneSelect.value === teamTwoSelect.value) {
+        teamTwoSelect.setCustomValidity("Choose two different teams.");
+        teamTwoSelect.reportValidity();
+        return;
+      }
+      teamTwoSelect.setCustomValidity("");
+      league.games.push({
+        id: "game-" + Date.now(),
+        date: dateInput.value,
+        time: timeInput.value,
+        teamOneId: teamOneSelect.value,
+        teamTwoId: teamTwoSelect.value
+      });
+      league.games.sort(function (a, b) {
+        return (a.date + " " + a.time).localeCompare(b.date + " " + b.time);
+      });
+      saveCreatedLeagues();
+      selectDate(dateInput.value);
+      timeInput.value = "";
+      teamOneSelect.value = "";
+      teamTwoSelect.value = "";
+    });
+
+    teamTwoSelect.addEventListener("change", function () {
+      teamTwoSelect.setCustomValidity("");
+    });
+
+    calendarCard.append(calendarHeader, weekPicker, calendarGrid);
+    layout.append(calendarCard, formCard);
+    container.appendChild(layout);
+    syncWeekPicker();
+    renderCalendar();
+    renderGames();
   }
 
   function renderTeamPage(league, team) {
